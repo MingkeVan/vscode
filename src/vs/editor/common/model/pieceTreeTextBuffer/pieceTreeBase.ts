@@ -202,7 +202,6 @@ export class PieceTreeBase {
 	protected _lineCnt: number;
 	protected _length: number;
 	private _lastChangeBufferPos: BufferCursor;
-	private _lastNodePosition: NodePosition;
 
 	constructor(chunks: StringBuffer[]) {
 		this.create(chunks);
@@ -213,7 +212,6 @@ export class PieceTreeBase {
 			new StringBuffer('', [0])
 		];
 		this._lastChangeBufferPos = { line: 0, column: 0 };
-		this._lastNodePosition = null;
 		this.root = SENTINEL;
 		this._lineCnt = 1;
 		this._length = 0;
@@ -453,7 +451,6 @@ export class PieceTreeBase {
 				// changed buffer
 				this.appendToNode(node, value);
 				this.computeBufferMetadata();
-				this._lastNodePosition = { node, remainder, nodeStartOffset };
 				return;
 			}
 
@@ -937,33 +934,7 @@ export class PieceTreeBase {
 		updateTreeMetadata(this, node, value.length, lf_delta);
 	}
 
-	readNodePositionFromCache(offset: number): NodePosition {
-		if (!this._lastNodePosition) {
-			return null;
-		}
-
-		if (this._lastNodePosition.node.parent === null) {
-			this._lastNodePosition = null;
-			return null;
-		}
-
-		if (this._lastNodePosition.nodeStartOffset > offset || this._lastNodePosition.nodeStartOffset + this._lastNodePosition.node.piece.length < offset) {
-			return null;
-		}
-
-		return {
-			node: this._lastNodePosition.node,
-			remainder: offset - this._lastNodePosition.nodeStartOffset,
-			nodeStartOffset: this._lastNodePosition.nodeStartOffset
-		};
-	}
-
 	nodeAt(offset: number): NodePosition {
-		let cachedNodePosition = this.readNodePositionFromCache(offset);
-		if (cachedNodePosition) {
-			return cachedNodePosition;
-		}
-
 		let x = this.root;
 		let nodeStartOffset = 0;
 
